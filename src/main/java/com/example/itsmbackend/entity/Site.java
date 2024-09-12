@@ -1,13 +1,12 @@
 package com.example.itsmbackend.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.Set;
 
 @Entity
 @Table(name = "sites")
@@ -18,9 +17,24 @@ import lombok.Setter;
 public class Site {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long siteId;
 
-    @Column(unique = true)
-    private int sideCode;
+    @Column(nullable = false)
+    private String siteName;
+
+    @Column(nullable = false)
+    private int siteCode;
+
+
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
+    private Set<Assignment> assignments;
+
+    @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
+    private Set<Request> requests;
+
+
+    // Relations with other entities
+
 
 }

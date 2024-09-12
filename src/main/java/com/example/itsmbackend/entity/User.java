@@ -17,13 +17,13 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long userId;
 
     @Column
     private String fullName;
+
     @Column(unique = true)
     private String email;
-
     @Column
     private String password;
 
@@ -32,11 +32,15 @@ public class User {
 
     // Relations
 
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, optional = true)
+    @JoinColumn(name = "supervisor_id")
+    private User supervisor;
+
     // One User  can have multiple site assigned
-//    @OneToMany(mappedBy = "users" , cascade = CascadeType.ALL)
-//    private List<Assignment> siteAssignments;
-//
-//    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
-//    private  List<Request> requests;
+    @OneToMany(mappedBy = "user" , cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Assignment> siteAssignments;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private  List<Request> requests;
 
 }
