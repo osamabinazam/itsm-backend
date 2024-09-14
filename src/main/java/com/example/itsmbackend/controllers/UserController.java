@@ -1,11 +1,18 @@
 package com.example.itsmbackend.controllers;
 
+import com.example.itsmbackend.entity.Assignment;
 import com.example.itsmbackend.entity.User;
+import com.example.itsmbackend.payloads.SiteDTO;
+import com.example.itsmbackend.payloads.UserDTO;
+import com.example.itsmbackend.repository.AssignmentRepository;
 import com.example.itsmbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
@@ -14,14 +21,73 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+
+    /**
+     * Create a new user
+     * @param user
+     * @return
+     */
     @PostMapping
     User createUser(@RequestBody User user){
+
         return userService.createUser(user);
     }
 
-    @GetMapping("/all-users")
-    @PreAuthorize("hasRole('ADMIN')")
-    ResponseEntity<?> getAllUsers(){
-        return ResponseEntity.ok(userService.getAllUsers());
+
+    /**
+     * Get all users
+     * @param userId
+     * @return
+     */
+    @GetMapping("/{userId}")
+    ResponseEntity<?> getAllUsers(@PathVariable Long userId){
+        return ResponseEntity.ok(userService.findByUserId(userId));
     }
+
+    /**
+     * Get all sites of the user
+     * @param userId
+     * @return
+     */
+    @PreAuthorize("hasAnyRole('CO','RM', 'TGL', 'PM')")
+    @GetMapping("/{userId}/sites")
+    ResponseEntity<?> getAllUserSite(@PathVariable Long userId){
+       try{
+              List<SiteDTO> sites = userService.getAllUserSite(userId);
+              return ResponseEntity.ok(sites);
+         } catch (Exception e){
+              return ResponseEntity.badRequest().body("User not found");
+       }
+    }
+
+    /**
+     * Get the Supervisor or supervisors of the user
+     */
+    @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
+    @GetMapping("/{userId}/supervisors")
+    ResponseEntity<?> getSupervisors(@PathVariable Long userId){
+        try{
+            List<UserDTO> supervisors = userService.getAllSupervisors(userId);
+            return ResponseEntity.ok(supervisors);
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body("User not found");
+        }
+    }
+
+    /**
+     * Get the supervisor of a user
+     */
+    @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
+    @GetMapping("/{userId}/supervisor")
+    ResponseEntity<?> getSupervisor(@PathVariable Long userId){
+        try{
+            UserDTO supervisor = userService.getSupervisor(userId);
+            return ResponseEntity.ok(supervisor);
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body("User not found");
+        }
+    }
+
+
+
 }

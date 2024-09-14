@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,11 +19,13 @@ public class UserDTO {
     private String fullName;
     private String email;
     private String role;
+
     public UserDTO(User user) {
         this.id = user.getUserId();
         this.fullName = user.getFullName();
         this.email = user.getEmail();
         this.role = user.getRole().name();
+
     }
 
     public UserDTO(Object[] objects) {
