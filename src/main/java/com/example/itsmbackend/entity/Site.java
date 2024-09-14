@@ -1,5 +1,6 @@
 package com.example.itsmbackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -28,9 +29,11 @@ public class Site {
 
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Assignment> assignments;
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Request> requests;
 
 
