@@ -31,7 +31,7 @@ public class RequestController {
 
 
     @PreAuthorize("hasAnyRole('TGL', 'PM', 'RM')")
-    @GetMapping("/all-requests")
+    @GetMapping("/requests")
     ResponseEntity<?> getAllRequestOfUser() {
         try {
             Optional<User> user = Optional.ofNullable(userService.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName()));
@@ -47,6 +47,25 @@ public class RequestController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PreAuthorize("hasAnyRole('CO')")
+    @GetMapping("/co/requests")
+    ResponseEntity<?> getAllRequestOfCO() {
+        try {
+            Optional<User> user = Optional.ofNullable(userService.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName()));
+            if (user.isPresent()) {
+                List<RequestDTO> requests = requestService.getAllRequestOfCO(user.get().getUserId());
+                return new ResponseEntity<>(requests,HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
+            }
+
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     /**
      * Create a request
      *
@@ -64,7 +83,7 @@ public class RequestController {
     }
 
     /**
-     *
+     * Update the request
      */
     @PreAuthorize("hasAnyRole('TGL', 'PM','RM')")
     @PutMapping("/{id}")

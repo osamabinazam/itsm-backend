@@ -9,4 +9,6 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
 
     List<Request> findRequestsByForwardedToUserId(Long id);
+
+    List<Request> findRequestsByUserUserId(Long id);
 }

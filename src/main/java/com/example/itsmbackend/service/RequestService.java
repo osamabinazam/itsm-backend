@@ -10,6 +10,7 @@ import com.example.itsmbackend.repository.RequestRepository;
 import com.example.itsmbackend.repository.SiteRepository;
 import com.example.itsmbackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -136,6 +137,7 @@ public class RequestService {
                     requestInDb.get().setVerifiedBy(requestDTO.getVerifiedBy() != null ? userService.findByUserId(requestDTO.getVerifiedBy()) : requestInDb.get().getVerifiedBy());
                     requestInDb.get().setApprovedBy(requestDTO.getApprovedBy() != null ? userService.findByUserId(requestDTO.getApprovedBy()) : requestInDb.get().getApprovedBy());
                     requestInDb.get().setForwardedTo(requestDTO.getForwardTo() != null ? userService.findByUserId(requestDTO.getForwardTo()) : requestInDb.get().getForwardedTo());
+                    requestInDb.get().setForwardedBy(requestDTO.getForwardedBy() != null ? userService.findByUserId(requestDTO.getForwardedBy()) : requestInDb.get().getForwardedBy());
                     requestInDb.get().setCurrentLevel(requestDTO.getCurrentLevel()!= null ? requestDTO.getCurrentLevel() : requestInDb.get().getCurrentLevel());
                     requestInDb.get().setNextAssignee(requestDTO.getNextAssignee() != null ? userService.findByUserId(requestDTO.getNextAssignee()) : requestInDb.get().getNextAssignee());
 
@@ -187,8 +189,30 @@ public class RequestService {
         if (requests != null) {
             List<RequestDTO> requestDTOS = new ArrayList<>();
             for (Request request : requests) {
-                // Skip requests that are already approved
-                if (request.getStatus() == RequestStatus.APPROVED) {
+
+
+                // Allow the CO (creator of the request) to always see the request, regardless of status
+                if (request.getUser().getUserId().equals(
+                        userService.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).getUserId()
+                )) {
+                    // Convert Request entity to RequestDTO
+                    // Convert Request entity to RequestDTO
+                    RequestDTO requestDTO = new RequestDTO();
+                    requestDTO.setId(request.getId());
+                    requestDTO.setFaultDescription(request.getFaultDescription());
+                    requestDTO.setStatus(request.getStatus().name());
+                    requestDTO.setType(request.getType().name());
+                    requestDTO.setImagePath(request.getImagePath());
+                    requestDTO.setCurrentLevel(request.getCurrentLevel());
+                    requestDTO.setSubmissionDate(request.getSubmissionDate());
+                    requestDTO.setUserId(request.getUser().getUserId());
+                    requestDTO.setSiteId(request.getSite().getSiteId());
+                    requestDTO.setForwardTo(request.getForwardedTo() != null ? request.getForwardedTo().getUserId() : null);
+                    requestDTO.setVerifiedBy(request.getVerifiedBy() != null ? request.getVerifiedBy().getUserId() : null);
+                    requestDTO.setApprovedBy(request.getApprovedBy() != null ? request.getApprovedBy().getUserId() : null);
+                    requestDTO.setForwardedBy(request.getForwardedBy() != null ? request.getForwardedBy().getUserId() : null);
+                    requestDTO.setNextAssignee(request.getNextAssignee() != null ? request.getNextAssignee().getUserId() : null);
+                    requestDTOS.add(requestDTO);
                     continue;
                 }
 
@@ -216,6 +240,40 @@ public class RequestService {
                     }
                 }
 
+
+                // Convert Request entity to RequestDTO
+                RequestDTO requestDTO = new RequestDTO();
+                requestDTO.setId(request.getId());
+                requestDTO.setFaultDescription(request.getFaultDescription());
+                requestDTO.setStatus(request.getStatus().name());
+                requestDTO.setType(request.getType().name());
+                requestDTO.setImagePath(request.getImagePath());
+                requestDTO.setCurrentLevel(request.getCurrentLevel());
+                requestDTO.setSubmissionDate(request.getSubmissionDate());
+                requestDTO.setUserId(request.getUser().getUserId());
+                requestDTO.setSiteId(request.getSite().getSiteId());
+                requestDTO.setForwardTo(request.getForwardedTo() != null ? request.getForwardedTo().getUserId() : null);
+                requestDTO.setVerifiedBy(request.getVerifiedBy() != null ? request.getVerifiedBy().getUserId() : null);
+                requestDTO.setApprovedBy(request.getApprovedBy() != null ? request.getApprovedBy().getUserId() : null);
+                requestDTO.setForwardedBy(request.getForwardedBy() != null ? request.getForwardedBy().getUserId() : null);
+                requestDTO.setNextAssignee(request.getNextAssignee() != null ? request.getNextAssignee().getUserId() : null);
+                requestDTOS.add(requestDTO);
+            }
+            return requestDTOS;
+        }
+        return null;
+    }
+
+    /**
+     * Find all requests of CO
+     * @param id
+     * @return
+     */
+    public List<RequestDTO> getAllRequestOfCO(Long id) {
+        List<Request> requests = requestRepository.findRequestsByUserUserId(id);
+        if (requests != null) {
+            List<RequestDTO> requestDTOS = new ArrayList<>();
+            for (Request request : requests) {
                 // Convert Request entity to RequestDTO
                 RequestDTO requestDTO = new RequestDTO();
                 requestDTO.setId(request.getId());
