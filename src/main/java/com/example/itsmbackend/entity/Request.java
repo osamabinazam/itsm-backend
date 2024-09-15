@@ -2,6 +2,8 @@ package com.example.itsmbackend.entity;
 
 import com.example.itsmbackend.entity.enums.RequestStatus;
 import com.example.itsmbackend.entity.enums.RequestType;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,7 +24,7 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true,nullable = false)
+    @Column(nullable = false)
     private String faultDescription;
 
     @Column( nullable = false)
@@ -44,27 +46,39 @@ public class Request {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user; // CO who created the request
 
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false)
-    private Site site;
+    @JsonIgnore
+    private Site site; //
 
     // Relations
     @ManyToOne
     @JoinColumn(name = "verified_by")
+      @JsonIgnore
     private User verifiedBy;                     // TGL Who verifies the request
+
+    // Hold to whom request is forwarded
+    @ManyToOne
+    @JoinColumn(name = "forwarded_to")
+    @JsonIgnore
+    private User forwardedTo;
 
     @ManyToOne
     @JoinColumn(name="approved_by")
+    @JsonIgnore
     private User approvedBy;
 
     @ManyToOne
     @JoinColumn(name = "forwarded_by")
+      @JsonIgnore
     private User forwardedBy;
 
     @ManyToOne
     @JoinColumn(name = "next_assignee")
+      @JsonIgnore
     private User nextAssignee;
 
 

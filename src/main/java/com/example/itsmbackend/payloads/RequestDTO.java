@@ -21,6 +21,7 @@ public class RequestDTO {
     private LocalDateTime submissionDate;
     private Long userId;
     private Long siteId;
+    private Long forwardTo;
     private Long verifiedBy;
     private Long approvedBy;
     private Long forwardedBy;
