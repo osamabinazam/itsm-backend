@@ -126,4 +126,10 @@ public class UserService {
         return null;
     }
 
+
+    /**
+     * Get all requests of the user
+     */
+
+
 }

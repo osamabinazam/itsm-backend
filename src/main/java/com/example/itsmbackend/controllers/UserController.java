@@ -9,6 +9,7 @@ import com.example.itsmbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -29,8 +30,13 @@ public class UserController {
      */
     @PostMapping
     User createUser(@RequestBody User user){
+        try{
+            return userService.createUser(user);
+        } catch (Exception e){
+            return null;
+        }
 
-        return userService.createUser(user);
+
     }
 
 
@@ -40,7 +46,7 @@ public class UserController {
      * @return
      */
     @GetMapping("/{userId}")
-    ResponseEntity<?> getAllUsers(@PathVariable Long userId){
+    ResponseEntity<?> getUserById(@PathVariable Long userId){
         return ResponseEntity.ok(userService.findByUserId(userId));
     }
 
@@ -54,6 +60,22 @@ public class UserController {
     ResponseEntity<?> getAllUserSite(@PathVariable Long userId){
        try{
               List<SiteDTO> sites = userService.getAllUserSite(userId);
+              return ResponseEntity.ok(sites);
+         } catch (Exception e){
+              return ResponseEntity.badRequest().body("User not found");
+       }
+    }
+
+    /**
+     * Get all sites of the Authenticated User
+     * @return
+     */
+    @PreAuthorize("hasAnyRole('CO','RM', 'TGL', 'PM')")
+    @GetMapping("/sites")
+    ResponseEntity<?> getAllUserSite(){
+       try{
+           User user = userService.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName());
+              List<SiteDTO> sites = userService.getAllUserSite(user.getUserId());
               return ResponseEntity.ok(sites);
          } catch (Exception e){
               return ResponseEntity.badRequest().body("User not found");
@@ -75,6 +97,24 @@ public class UserController {
     }
 
     /**
+     * Get the Supervisor or supervisors of the user
+     */
+    @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
+    @GetMapping("/supervisors")
+    ResponseEntity<?> getSupervisors(){
+        try{
+            List<UserDTO> supervisors = userService.getAllSupervisors(
+                    userService.findUserByEmail(
+                            SecurityContextHolder.getContext().getAuthentication().getName()
+                    ).getUserId()
+            );
+            return ResponseEntity.ok(supervisors);
+        } catch (Exception e){
+            return ResponseEntity.badRequest().body("User not found");
+        }
+    }
+
+    /**
      * Get the supervisor of a user
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
@@ -87,6 +127,10 @@ public class UserController {
             return ResponseEntity.badRequest().body("User not found");
         }
     }
+
+
+
+
 
 
 

@@ -3,6 +3,7 @@ package com.example.itsmbackend.controllers;
 
 import com.example.itsmbackend.entity.User;
 import com.example.itsmbackend.payloads.LoginRequest;
+import com.example.itsmbackend.payloads.UserDTO;
 import com.example.itsmbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -40,7 +41,15 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            return ResponseEntity.ok("User authenticated successfully. Username: " + userDetails.getUsername());
+            User user = userService.findUserByEmail(userDetails.getUsername());
+            UserDTO responseUser = new UserDTO(
+                    user.getUserId(),
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getRole().name()
+            );
+
+            return ResponseEntity.ok(responseUser);
 
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found: " + e.getMessage());
