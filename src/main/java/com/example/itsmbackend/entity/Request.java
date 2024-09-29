@@ -2,7 +2,6 @@ package com.example.itsmbackend.entity;
 
 import com.example.itsmbackend.entity.enums.RequestStatus;
 import com.example.itsmbackend.entity.enums.RequestType;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "requests")
@@ -27,7 +28,7 @@ public class Request {
     @Column(nullable = false)
     private String faultDescription;
 
-    @Column( nullable = false)
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
@@ -35,8 +36,9 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private RequestType type;
 
-    @Column(nullable = true)
-    private String imagePath;
+    // One-to-Many relationship with Image entity
+    @OneToMany(mappedBy = "request", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
 
     @Column(nullable = false)
     private String currentLevel;
@@ -47,39 +49,36 @@ public class Request {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
-    private User user; // CO who created the request
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "site_id", nullable = false)
     @JsonIgnore
-    private Site site; //
+    private Site site;
 
-    // Relations
     @ManyToOne
     @JoinColumn(name = "verified_by")
-      @JsonIgnore
-    private User verifiedBy;                     // TGL Who verifies the request
+    @JsonIgnore
+    private User verifiedBy;
 
-    // Hold to whom request is forwarded
     @ManyToOne
     @JoinColumn(name = "forwarded_to")
     @JsonIgnore
     private User forwardedTo;
 
     @ManyToOne
-    @JoinColumn(name="approved_by")
+    @JoinColumn(name = "approved_by")
     @JsonIgnore
     private User approvedBy;
 
     @ManyToOne
     @JoinColumn(name = "forwarded_by")
-      @JsonIgnore
+    @JsonIgnore
     private User forwardedBy;
 
     @ManyToOne
     @JoinColumn(name = "next_assignee")
-      @JsonIgnore
+    @JsonIgnore
     private User nextAssignee;
-
 
 }

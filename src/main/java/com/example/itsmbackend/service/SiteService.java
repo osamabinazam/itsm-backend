@@ -7,26 +7,34 @@ import com.example.itsmbackend.payloads.SiteDTO;
 import com.example.itsmbackend.payloads.UserDTO;
 import com.example.itsmbackend.repository.AssignmentRepository;
 import com.example.itsmbackend.repository.SiteRepository;
-import com.example.itsmbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The SiteService class is responsible for handling site-related operations.
+ * It provides methods for creating, updating, and deleting sites.
+ * The class is annotated with @Service to indicate that it is a service class.
+ */
 @Service
 public class SiteService {
 
-    @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AssignmentRepository assignmentRepository;
 
-    @Autowired
-    private AssignmentRepository assignmentRepository;
+    public SiteService(SiteRepository siteRepository, AssignmentRepository assignmentRepository) {
+        this.siteRepository = siteRepository;
+        this.assignmentRepository = assignmentRepository;
+    }
 
+    /**
+     * Create a new site
+     * @param site SiteDTO object to create
+     * @return Site object
+     */
     public Site createSite(SiteDTO site){
         Site newSite = new Site();
         newSite.setSiteName(site.getSiteName());
@@ -38,8 +46,8 @@ public class SiteService {
 
     /**
      * Get all users associated with a site
-     * @param siteId
-     * @return
+     * @param siteId Site id to get users for
+     * @return List of users
      */
     public List<UserDTO> getUsersBySiteId(Long siteId) {
         List<Assignment> assignments = assignmentRepository.findBySiteSiteId(siteId);
@@ -54,14 +62,13 @@ public class SiteService {
             userDTO.setRole(user.getRole().name());
             userDTOs.add(userDTO);
         }
-
         return userDTOs;
     }
 
     /**
      * Get site by id
-     * @param id
-     * @return
+     * @param id Site id to get
+     * @return Site object
      */
     public Site getSiteById(Long id){
         return siteRepository.findById(id).orElse(null);
@@ -70,9 +77,9 @@ public class SiteService {
 
     /**
      * Update site by id
-     * @param site
-     * @param id
-     * @return
+     * @param site Site object to update
+     * @param id Site id to update
+     * @return Updated site object
      */
     public Site updateSite(Site site, Long id){
         Optional<Site> siteInDb = siteRepository.findById(id);
@@ -83,26 +90,16 @@ public class SiteService {
             return siteRepository.save(siteToUpdate);
         }
         return null;
-
     }
-
 
     /**
      * Get all sites
-     * @return
+     * @return List of sites
      */
     public List<Site> getAllSites(){
         return siteRepository.findAll();
     }
 
-
-    /**
-     * Delete site by id
-     * @param id
-     */
-    public void deleteSiteById(Long id){
-        siteRepository.deleteById(id);
-    }
 
 
 }

@@ -5,15 +5,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
+/**
+ * The AssignmentRepository interface is a repository for the Assignment entity.
+ * It provides methods for accessing Assignment entities in the database.
+ */
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
 
 
-    // Method to find all assignments for a particular user
+    /**
+     * Find all assignments for a particular user
+     * @param userId ID of the user
+     * @return List of assignments
+     */
     List<Assignment> findDistinctByUserUserIdOrderBySite(Long userId);
 
-    // Method to find associated site to the user
-    List<Assignment> findDistinctBySiteSiteIdOrderByUser(Long siteId);
 
-    // Method to find all assignments for a particular site
+    /**
+     * Find all assignments for a particular site
+     * @param siteId ID of the site
+     * @return List of assignments
+     */
     List<Assignment> findBySiteSiteId(Long siteId);
 }

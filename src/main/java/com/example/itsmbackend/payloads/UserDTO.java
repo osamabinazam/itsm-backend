@@ -2,14 +2,17 @@ package com.example.itsmbackend.payloads;
 
 
 import com.example.itsmbackend.entity.User;
-import com.example.itsmbackend.entity.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Set;
-
+/**
+ * The UserDTO class represents a data transfer object for a User entity.
+ * It is used to transfer User data between the frontend and backend.
+ * The class is annotated with @Getter, @Setter, @AllArgsConstructor, and @NoArgsConstructor
+ * to automatically generate the getters, setters, constructors, and no-args constructor.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -20,6 +23,10 @@ public class UserDTO {
     private String email;
     private String role;
 
+    /**
+     * Constructor for UserDTO
+     * @param user User object
+     */
     public UserDTO(User user) {
         this.id = user.getUserId();
         this.fullName = user.getFullName();
@@ -28,6 +35,10 @@ public class UserDTO {
 
     }
 
+    /**
+     * Constructor for UserDTO
+     * @param objects Object array containing user data
+     */
     public UserDTO(Object[] objects) {
         this.id = (Long) objects[0];
         this.email = (String) objects[1];

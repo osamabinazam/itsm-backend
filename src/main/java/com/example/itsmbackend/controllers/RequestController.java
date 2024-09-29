@@ -1,35 +1,39 @@
 package com.example.itsmbackend.controllers;
 
-import com.example.itsmbackend.entity.Request;
 import com.example.itsmbackend.entity.User;
-import com.example.itsmbackend.entity.enums.RequestStatus;
-import com.example.itsmbackend.entity.enums.RequestType;
 import com.example.itsmbackend.payloads.RequestDTO;
-import com.example.itsmbackend.payloads.UserDTO;
 import com.example.itsmbackend.service.RequestService;
 import com.example.itsmbackend.service.UserService;
-import lombok.extern.java.Log;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The RequestController class is responsible for handling requests related to the Request entity.
+ * It provides endpoints for creating, updating, and retrieving requests.
+ * The class is annotated with @RestController to indicate that it is a controller class.
+ * The class is annotated with @RequestMapping to specify the base URL path for all endpoints in the class.
+ */
 @RestController
 @RequestMapping("/api/request")
 public class RequestController {
-    @Autowired
-    private RequestService requestService;
-    @Autowired
-    private UserService userService;
+    private final RequestService requestService;
+    private final UserService userService;
+    public RequestController(RequestService requestService, UserService userService) {
+        this.requestService = requestService;
+        this.userService = userService;
+    }
 
-
+    /**
+     * Get all requests of the current user
+     * @return - The list of requests
+     */
     @PreAuthorize("hasAnyRole('TGL', 'PM', 'RM')")
     @GetMapping("/requests")
     ResponseEntity<?> getAllRequestOfUser() {
@@ -41,13 +45,15 @@ public class RequestController {
             } else {
                 return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
             }
-
-
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    /**
+     * Get all requests of the current user
+     * @return The list of requests
+     */
     @PreAuthorize("hasAnyRole('CO')")
     @GetMapping("/co/requests")
     ResponseEntity<?> getAllRequestOfCO() {
@@ -59,23 +65,25 @@ public class RequestController {
             } else {
                 return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
             }
-
-
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * Create a request
-     *
+     * Create a new request
+     * @param requestDTO The request data
+     * @return The created request
      */
-
     @PreAuthorize("hasRole('CO')")
     @PostMapping
-    ResponseEntity<?> createRequest(@RequestBody RequestDTO requestDTO) {
+    ResponseEntity<?> createRequest(
+            @RequestPart("request") RequestDTO requestDTO,
+            @RequestPart("images") List<MultipartFile> images
+    ) {
         try {
-            RequestDTO newRequest = requestService.createRequest(requestDTO);
+            RequestDTO newRequest = requestService.createRequest(requestDTO, images);
+
             return new ResponseEntity<>(newRequest, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -83,7 +91,10 @@ public class RequestController {
     }
 
     /**
-     * Update the request
+     * Update a request by id with the new requestDTO data
+     * @param requestDTO The new request data
+     * @param id The id of the request to update
+     * @return The updated request
      */
     @PreAuthorize("hasAnyRole('TGL', 'PM','RM')")
     @PutMapping("/{id}")
@@ -100,8 +111,5 @@ public class RequestController {
         }catch (Exception e){
             return  new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
-
-
 }

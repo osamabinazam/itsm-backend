@@ -2,36 +2,39 @@ package com.example.itsmbackend.controllers;
 
 
 import com.example.itsmbackend.entity.Site;
-import com.example.itsmbackend.entity.User;
+
 import com.example.itsmbackend.payloads.SiteDTO;
 import com.example.itsmbackend.payloads.UserDTO;
 import com.example.itsmbackend.service.SiteService;
-import com.example.itsmbackend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * The SiteController class is a REST controller that handles requests related to sites.
+ * It provides endpoints for creating sites, getting site details, and getting site users.
+ * The SiteController class is annotated with @RestController to enable Spring to automatically
+ * generate REST-ful endpoints for the class.
+ */
 @RestController
 @RequestMapping("/api/site")
 public class SiteController {
 
-    @Autowired
-    private SiteService siteService;
+    private final SiteService siteService;
+    public SiteController(SiteService siteService) {
+        this.siteService = siteService;
 
-    @Autowired
-    private UserService userService;
-
+    }
 
     /**
      * Get all users associated with a site
-     * @param id
-     * @return
+     * @param id site id
+     * @return list of users
      */
     @GetMapping("/{id}/users")
     ResponseEntity<?> getAllUsersBySiteId(@PathVariable Long id){
@@ -52,8 +55,8 @@ public class SiteController {
 
     /**
      * Get site by id
-     * @param id
-     * @return
+     * @param id site id
+     * @return site
      */
     @GetMapping("/{id}")
     ResponseEntity<?> getSiteById(@PathVariable Long id){
@@ -70,11 +73,10 @@ public class SiteController {
         }
     }
 
-
     /**
      * Create a new site (Admin only)
-     * @param site
-     * @return
+     * @param site SiteDTO
+     * @return site
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -87,11 +89,10 @@ public class SiteController {
         }
     }
 
-
     /**
      * Delete a site by id (Admin only)
-     * @param id
-     * @return
+     * @param id site id
+     * @return response entity
      */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
@@ -99,9 +100,11 @@ public class SiteController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-
     /**
-     * Udapte a site by id (Admin only)
+     * Update a site by id (Admin only)
+     * @param site SiteDTO
+     * @param id site id
+     * @return site
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
@@ -117,9 +120,9 @@ public class SiteController {
         }
     }
 
-
     /**
      * Get all sites
+     * @return list of sites
      */
     @GetMapping
     ResponseEntity<?> getAllSites(){
@@ -130,7 +133,4 @@ public class SiteController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
 }

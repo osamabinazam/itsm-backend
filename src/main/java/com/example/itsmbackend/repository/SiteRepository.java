@@ -7,6 +7,10 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
+/**
+ * The SiteRepository interface is a repository for the Site entity.
+ * It provides methods for accessing Site entities in the database.
+ */
 public interface SiteRepository extends JpaRepository<Site, Long> {
     Site findBySiteName(String siteName);
     Site findBySiteCode(int siteCode);

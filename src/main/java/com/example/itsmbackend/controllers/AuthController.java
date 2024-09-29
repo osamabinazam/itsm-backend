@@ -18,17 +18,36 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+/**
+ * The AuthController class is a REST controller that handles requests related to authentication.
+ * It provides endpoints for user login, user registration, and user logout.
+ * The AuthController class is annotated with @RestController to enable Spring to automatically
+ * generate REST-ful endpoints for the class.
+ */
 @RestController
 @RequestMapping("/public/api/auth")
 public class AuthController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
+    /**
+     * Constructor for AuthController
+     * @param userService UserService object
+     * @param authenticationManager AuthenticationManager object
+     */
+    public AuthController(UserService userService, AuthenticationManager authenticationManager) {
+        this.userService = userService;
+        this.authenticationManager = authenticationManager;
+    }
+
+    /**
+     * Login a user with the given email and password
+     * @param loginRequest LoginRequest object
+     * @return UserDTO object
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
@@ -58,6 +77,11 @@ public class AuthController {
         }
     }
 
+    /**
+     * Register a new user with the given details
+     * @param user User object
+     * @return User object
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user){
        try{
@@ -73,6 +97,10 @@ public class AuthController {
        }
     }
 
+    /**
+     * Logout the current user
+     * @return ResponseEntity
+     */
     @GetMapping("/logout")
     public ResponseEntity<?> logout(){
         SecurityContextHolder.clearContext();

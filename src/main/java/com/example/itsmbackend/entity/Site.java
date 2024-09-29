@@ -36,8 +36,4 @@ public class Site {
     @JsonIgnore
     private Set<Request> requests;
 
-
-    // Relations with other entities
-
-
 }

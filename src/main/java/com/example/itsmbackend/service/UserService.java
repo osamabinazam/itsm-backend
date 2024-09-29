@@ -7,7 +7,6 @@ import com.example.itsmbackend.payloads.SiteDTO;
 import com.example.itsmbackend.payloads.UserDTO;
 import com.example.itsmbackend.repository.AssignmentRepository;
 import com.example.itsmbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,20 +14,34 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The UserService class is responsible for handling user-related operations.
+ * It provides methods for creating, updating, and deleting users.
+ * The class is annotated with @Service to indicate that it is a service class.
+ */
 @Service
 public class UserService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private AssignmentRepository assignmentRepository;
+    private final AssignmentRepository assignmentRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
+     * Constructs a new UserService with the given UserRepository and AssignmentRepository.
+     *
+     * @param userRepository The UserRepository to use for user operations.
+     * @param assignmentRepository The AssignmentRepository to use for assignment operations.
+     */
+    public UserService(UserRepository userRepository, AssignmentRepository assignmentRepository) {
+        this.userRepository = userRepository;
+        this.assignmentRepository = assignmentRepository;
+    }
+
+    /**
      * Create a new user
-     * @param user
-     * @return
+     * @param user User object to create
+     * @return User object
      */
     public User createUser(User user){
         user.setFullName(user.getFullName().toLowerCase());
@@ -36,31 +49,27 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Find user by ID and
+     * @param userId ID of the user
+     * @return User object
+     */
     public User findByUserId(Long userId){
         return userRepository.findById(userId).orElse(null);
     }
 
     /**
      * Find user by email
-     * @param username
-     * @return
+     * @param username email of the user
+     * @return User object
      */
     public User findUserByEmail(String username){
         return userRepository.findByEmail(username);
     }
 
     /**
-     * Find user by full name
-     * @param fullName
-     * @return
-     */
-    public User findUserByFullName(String fullName){
-        return userRepository.findByFullName(fullName.toLowerCase());
-    }
-
-    /**
      * Get all users
-     * @return
+     * @return List of UserDTO objects
      */
     public List<UserDTO> getAllUsers() {
        List<User> users = userRepository.findAll();
@@ -69,7 +78,7 @@ public class UserService {
 
     /**
      * Get all admins
-     * @return
+     * @return List of UserDTO objects
      */
     public List<UserDTO> getAllAdmins() {
         return userRepository.findAllByRoleOrderByFullName(Role.ADMIN).stream().map(UserDTO::new).toList();
@@ -78,14 +87,14 @@ public class UserService {
 
     /**
      * Get all sites of the user
-     * @param userId
-     * @return
+     * @param userId ID of the user
+     * @return List of SiteDTO objects
      */
     public List<SiteDTO> getAllUserSite(Long userId){
 
             List<Assignment> assignments = assignmentRepository.findDistinctByUserUserIdOrderBySite(userId);
             if (assignments.isEmpty()) {
-                return null;
+                return List.of();
             }
             List<SiteDTO> siteDTOS = new ArrayList<>();
             for (Assignment assignment : assignments) {
@@ -125,11 +134,5 @@ public class UserService {
         }
         return null;
     }
-
-
-    /**
-     * Get all requests of the user
-     */
-
 
 }

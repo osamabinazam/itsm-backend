@@ -1,32 +1,41 @@
 package com.example.itsmbackend.controllers;
 
-import com.example.itsmbackend.entity.Assignment;
 import com.example.itsmbackend.entity.User;
 import com.example.itsmbackend.payloads.SiteDTO;
 import com.example.itsmbackend.payloads.UserDTO;
-import com.example.itsmbackend.repository.AssignmentRepository;
 import com.example.itsmbackend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The UserController class is a REST controller that handles requests related to users.
+ * It provides endpoints for creating users, getting user details, and getting user sites.
+ * It also provides endpoints for getting supervisors and supervisor details.
+ * The UserController class is annotated with @RestController to enable Spring to automatically
+ * generate REST-ful endpoints for the class.
+ */
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-
+    private final UserService userService;
 
     /**
-     * Create a new user
-     * @param user
-     * @return
+     * Constructor for UserController
+     * @param userService UserService object
+     */
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    /**
+     * Create a new user with the given details
+     * @param user User object
+     * @return User object
      */
     @PostMapping
     User createUser(@RequestBody User user){
@@ -35,15 +44,12 @@ public class UserController {
         } catch (Exception e){
             return null;
         }
-
-
     }
 
-
     /**
-     * Get all users
-     * @param userId
-     * @return
+     * Get a user by user ID
+     * @param userId User ID
+     * @return User object
      */
     @GetMapping("/{userId}")
     ResponseEntity<?> getUserById(@PathVariable Long userId){
@@ -51,9 +57,9 @@ public class UserController {
     }
 
     /**
-     * Get all sites of the user
-     * @param userId
-     * @return
+     * Get All Site for assigned to given user
+     * @param userId User ID
+     * @return List of sites
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL', 'PM')")
     @GetMapping("/{userId}/sites")
@@ -67,8 +73,8 @@ public class UserController {
     }
 
     /**
-     * Get all sites of the Authenticated User
-     * @return
+     * Get all sites for the current user
+     * @return List of sites
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL', 'PM')")
     @GetMapping("/sites")
@@ -82,8 +88,11 @@ public class UserController {
        }
     }
 
+
     /**
-     * Get the Supervisor or supervisors of the user
+     * Get all supervisors for the given user
+     * @param userId User ID
+     * @return List of supervisors
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
     @GetMapping("/{userId}/supervisors")
@@ -96,8 +105,10 @@ public class UserController {
         }
     }
 
+
     /**
-     * Get the Supervisor or supervisors of the user
+     * Get all supervisors for the current user
+     * @return List of supervisors
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
     @GetMapping("/supervisors")
@@ -115,7 +126,9 @@ public class UserController {
     }
 
     /**
-     * Get the supervisor of a user
+     * Get the supervisor for the given user
+     * @param userId User ID
+     * @return Supervisor object
      */
     @PreAuthorize("hasAnyRole('CO','RM', 'TGL')")
     @GetMapping("/{userId}/supervisor")
@@ -127,11 +140,5 @@ public class UserController {
             return ResponseEntity.badRequest().body("User not found");
         }
     }
-
-
-
-
-
-
 
 }

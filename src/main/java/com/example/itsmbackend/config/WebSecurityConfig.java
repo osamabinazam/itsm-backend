@@ -15,20 +15,35 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * The WebSecurityConfig class is responsible for configuring the security settings for the application.
+ * It is annotated with @Configuration to indicate that it is a configuration class.
+ * It is annotated with @EnableWebSecurity to enable Spring Security features.
+ * It is annotated with @EnableMethodSecurity to enable method-level security.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class WebSecurityConfig {
+    private final UserDetailsServiceImpl userDetailsService;
 
-
-    @Autowired
-    private  UserDetailsServiceImpl userDetailsService;
-
+    /**
+     * Constructs a new WebSecurityConfig with the given UserDetailsServiceImpl.
+     *
+     * @param userDetailsService The UserDetailsServiceImpl to use for user details.
+     */
     @Autowired
     public WebSecurityConfig(UserDetailsServiceImpl userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 
+    /**
+     * Configures the security settings for the application.
+     *
+     * @param http The HttpSecurity object to configure.
+     * @return A SecurityFilterChain object representing the security filter chain.
+     * @throws Exception If an error occurs while configuring the security settings.
+     */
     @SuppressWarnings("deprecation")
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws  Exception{
@@ -47,12 +62,23 @@ public class WebSecurityConfig {
         return http.build();
     }
 
+    /**
+     * Creates a new PasswordEncoder bean.
+     *
+     * @return A PasswordEncoder object.
+     */
     @Bean
     public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
 
-    // Expose the AuthenticationManager bean
+    /**
+     * Creates a new AuthenticationManager bean.
+     *
+     * @param http The HttpSecurity object to use for authentication.
+     * @return An AuthenticationManager object.
+     * @throws Exception If an error occurs while creating the AuthenticationManager.
+     */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder auth =

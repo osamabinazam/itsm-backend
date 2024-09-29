@@ -1,5 +1,6 @@
 package com.example.itsmbackend.service;
 
+import com.example.itsmbackend.entity.Image;
 import com.example.itsmbackend.entity.Request;
 import com.example.itsmbackend.entity.Site;
 import com.example.itsmbackend.entity.User;
@@ -9,34 +10,64 @@ import com.example.itsmbackend.payloads.RequestDTO;
 import com.example.itsmbackend.repository.RequestRepository;
 import com.example.itsmbackend.repository.SiteRepository;
 import com.example.itsmbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service class for Request entity
- */
 
+/**
+ * Service class for Request entity to handle business logic and data manipulation for requests
+ * @see Request for the entity
+ * @see RequestRepository for the repository
+ * @see UserService for the service
+ * @see ImageService for the service
+ * @see UserRepository for the repository
+ * @see SiteRepository for the repository
+ * @see User for the entity
+ * @see Site for the entity
+ * @see Image for the entity
+ */
 @Service
 public class RequestService {
 
-    @Autowired
-    private RequestRepository requestRepository;
+    private final RequestRepository requestRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
 
-    @Autowired UserService userService;
+    final UserService userService;
 
-    public RequestDTO createRequest(RequestDTO requestDTO) {
+    final ImageService imageService;
+
+    /**
+     * Constructor for RequestService class
+     * @param requestRepository - the repository for Request entity
+     * @param userRepository - the repository for User entity
+     * @param siteRepository - the repository for Site entity
+     * @param userService - the service for User entity
+     * @param imageService - the service for Image entity
+     */
+    public RequestService(RequestRepository requestRepository, UserRepository userRepository, SiteRepository siteRepository, UserService userService, ImageService imageService) {
+        this.requestRepository = requestRepository;
+        this.userRepository = userRepository;
+        this.siteRepository = siteRepository;
+        this.userService = userService;
+        this.imageService = imageService;
+    }
+
+    /**
+     * Create a new request from a RequestDTO and a list of images (if any) and save it to the database
+     * @param requestDTO - the request data
+     * @param images - the list of images
+     * @return - The created request
+     */
+    public RequestDTO createRequest(RequestDTO requestDTO, List<MultipartFile> images) throws IOException {
         // Fetch the User who is creating the request
         User user = userRepository.findById(requestDTO.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + requestDTO.getUserId()));
@@ -48,136 +79,51 @@ public class RequestService {
         User forwardTo = userRepository.findById(requestDTO.getForwardTo()).
                 orElseThrow(() -> new RuntimeException(("User not found with ID : " + requestDTO.getForwardTo())));
         // Create a new Request entity from the DTO
-        Request newRequest = new Request();
-        newRequest.setFaultDescription(requestDTO.getFaultDescription());
-        newRequest.setType(RequestType.valueOf(requestDTO.getType()));
-        newRequest.setStatus(RequestStatus.valueOf(requestDTO.getStatus()));
-        newRequest.setImagePath(requestDTO.getImagePath());
-        newRequest.setCurrentLevel(requestDTO.getCurrentLevel());
-        newRequest.setSubmissionDate(LocalDateTime.now());
+        Request newRequest = toRequest(requestDTO, user, site, forwardTo);
 
-        // Set the user and site in the request
-        newRequest.setUser(user);
-        newRequest.setSite(site);
-        newRequest.setForwardedTo(forwardTo);
-
-        // If there are any verification/approval/forwarded/next_assignee users, handle them (optional)
-        if (requestDTO.getVerifiedBy() != null) {
-            User verifiedBy = userRepository.findById(requestDTO.getVerifiedBy())
-                    .orElseThrow(() -> new RuntimeException("Verified user not found"));
-            newRequest.setVerifiedBy(verifiedBy);
-        }
-
-        if (requestDTO.getApprovedBy() != null) {
-            User approvedBy = userRepository.findById(requestDTO.getApprovedBy())
-                    .orElseThrow(() -> new RuntimeException("Approved user not found"));
-            newRequest.setApprovedBy(approvedBy);
-        }
-
-        if (requestDTO.getForwardedBy() != null) {
-            User forwardedBy = userRepository.findById(requestDTO.getForwardedBy())
-                    .orElseThrow(() -> new RuntimeException("Forwarded user not found"));
-            newRequest.setForwardedBy(forwardedBy);
-        }
-
-        if (requestDTO.getNextAssignee() != null) {
-            User nextAssignee = userRepository.findById(requestDTO.getNextAssignee())
-                    .orElseThrow(() -> new RuntimeException("Next assignee user not found"));
-            newRequest.setNextAssignee(nextAssignee);
-        }
-
-
+        List<Image> savedImages = new ArrayList<>();
         // Save the request to the database
         Request savedRequest = requestRepository.save(newRequest);
-
-        // Convert the saved Request entity back to a RequestDTO to return it
-        RequestDTO responseDTO = new RequestDTO();
-        responseDTO.setId(savedRequest.getId());
-        responseDTO.setFaultDescription(savedRequest.getFaultDescription());
-        responseDTO.setStatus(savedRequest.getStatus().name());
-        responseDTO.setType(savedRequest.getType().name());
-        responseDTO.setImagePath(savedRequest.getImagePath());
-        responseDTO.setCurrentLevel(savedRequest.getCurrentLevel());
-        responseDTO.setSubmissionDate(savedRequest.getSubmissionDate());
-        responseDTO.setUserId(savedRequest.getUser().getUserId());
-        responseDTO.setSiteId(savedRequest.getSite().getSiteId());
-
-        if (savedRequest.getVerifiedBy() != null) {
-            responseDTO.setVerifiedBy(savedRequest.getVerifiedBy().getUserId());
+        if (images != null){
+            savedImages = imageService.storeImages(images, savedRequest);
         }
-
-        if (savedRequest.getApprovedBy() != null) {
-            responseDTO.setApprovedBy(savedRequest.getApprovedBy().getUserId());
-        }
-
-        if (savedRequest.getForwardedBy() != null) {
-            responseDTO.setForwardedBy(savedRequest.getForwardedBy().getUserId());
-        }
-
-        if (savedRequest.getNextAssignee() != null) {
-            responseDTO.setNextAssignee(savedRequest.getNextAssignee().getUserId());
-        }
-
-        if (savedRequest.getForwardedTo() != null){
-            responseDTO.setForwardTo(savedRequest.getForwardedTo().getUserId());
-        }
-
-        return responseDTO;
-    }
-
-
-
-
-    public RequestDTO updateRequest( RequestDTO requestDTO ,long id) {
-        Optional<Request> requestInDb = findRequestById(id);
-        if (requestInDb.isPresent()) {
-            if (RequestStatus.valueOf(String.valueOf(requestInDb.get().getStatus())) != RequestStatus.APPROVED) {
-
-                    requestInDb.get().setStatus( requestDTO.getStatus() != null ? RequestStatus.valueOf(requestDTO.getStatus()) : requestInDb.get().getStatus());
-                    requestInDb.get().setVerifiedBy(requestDTO.getVerifiedBy() != null ? userService.findByUserId(requestDTO.getVerifiedBy()) : requestInDb.get().getVerifiedBy());
-                    requestInDb.get().setApprovedBy(requestDTO.getApprovedBy() != null ? userService.findByUserId(requestDTO.getApprovedBy()) : requestInDb.get().getApprovedBy());
-                    requestInDb.get().setForwardedTo(requestDTO.getForwardTo() != null ? userService.findByUserId(requestDTO.getForwardTo()) : requestInDb.get().getForwardedTo());
-                    requestInDb.get().setForwardedBy(requestDTO.getForwardedBy() != null ? userService.findByUserId(requestDTO.getForwardedBy()) : requestInDb.get().getForwardedBy());
-                    requestInDb.get().setCurrentLevel(requestDTO.getCurrentLevel()!= null ? requestDTO.getCurrentLevel() : requestInDb.get().getCurrentLevel());
-                    requestInDb.get().setNextAssignee(requestDTO.getNextAssignee() != null ? userService.findByUserId(requestDTO.getNextAssignee()) : requestInDb.get().getNextAssignee());
-
-                    Request updatedRequest = requestRepository.save(requestInDb.get());
-
-                    // Now return the DTo
-                    RequestDTO responseDTO = new RequestDTO();
-                    responseDTO.setId(updatedRequest.getId());
-                    responseDTO.setFaultDescription(updatedRequest.getFaultDescription());
-                    responseDTO.setStatus(updatedRequest.getStatus().name());
-                    responseDTO.setType(updatedRequest.getType().name());
-                    responseDTO.setImagePath(updatedRequest.getImagePath());
-                    responseDTO.setCurrentLevel(updatedRequest.getCurrentLevel());
-                    responseDTO.setUserId(updatedRequest.getUser().getUserId());
-                    responseDTO.setSiteId(updatedRequest.getSite().getSiteId());
-                    responseDTO.setSubmissionDate(updatedRequest.getSubmissionDate());
-                    responseDTO.setForwardTo(updatedRequest.getForwardedTo() != null ? updatedRequest.getForwardedTo().getUserId() : null);
-                    responseDTO.setVerifiedBy(updatedRequest.getVerifiedBy() != null ? updatedRequest.getVerifiedBy().getUserId() : null);
-                    responseDTO.setApprovedBy(updatedRequest.getApprovedBy() != null ? updatedRequest.getApprovedBy().getUserId() : null);
-                    responseDTO.setForwardedBy(updatedRequest.getForwardedBy() != null ? updatedRequest.getForwardedBy().getUserId() : null);
-                    responseDTO.setNextAssignee(updatedRequest.getNextAssignee() != null ? updatedRequest.getNextAssignee().getUserId() : null);
-
-                    return responseDTO;
-            }
-            else {
-                return null;
-            }
-
-        } else {
-            return null;
-
-        }
-
+        return RequestDTO.toRequestDTO(savedRequest, savedImages);
     }
 
     /**
-     *
-     * @param id
-     * @return
+     * Update a request by ID
+     * @param requestDTO - the updated request data
+     * @param id - the ID of the request to update
+     * @return The updated request
      */
+    public RequestDTO updateRequest( RequestDTO requestDTO ,long id) {
+        Optional<Request> requestInDb = findRequestById(id);
+        Request request = requestInDb.orElse(null);
+
+        if (requestInDb.isPresent() && RequestStatus.valueOf(String.valueOf(requestInDb.get().getStatus())) != RequestStatus.APPROVED) {
+
+                request.setStatus(requestDTO.getStatus() != null ? RequestStatus.valueOf(requestDTO.getStatus()) : request.getStatus());
+                request.setVerifiedBy(requestDTO.getVerifiedBy() != null ? userService.findByUserId(requestDTO.getVerifiedBy()) : request.getVerifiedBy());
+                request.setApprovedBy(requestDTO.getApprovedBy() != null ? userService.findByUserId(requestDTO.getApprovedBy()) : request.getApprovedBy());
+                request.setForwardedTo(requestDTO.getForwardTo() != null ? userService.findByUserId(requestDTO.getForwardTo()) : request.getForwardedTo());
+                request.setForwardedBy(requestDTO.getForwardedBy() != null ? userService.findByUserId(requestDTO.getForwardedBy()) : request.getForwardedBy());
+                request.setCurrentLevel(requestDTO.getCurrentLevel() != null ? requestDTO.getCurrentLevel() : request.getCurrentLevel());
+                request.setNextAssignee(requestDTO.getNextAssignee() != null ? userService.findByUserId(requestDTO.getNextAssignee()) :null);
+
+                Request updatedRequest = requestRepository.save(request);
+
+                // Find All Images for the request
+                List<Image> images = imageService.getImagesByRequest(updatedRequest);
+                if (images == null) {
+                    images = new ArrayList<>();
+                }
+                return RequestDTO.toRequestDTO(updatedRequest, images);
+            }
+
+        return null;
+    }
+
+
    /**
      * Get all requests for a user based on their role
      * @param userId - the ID of the user (TGL, RM, or PM)
@@ -190,114 +136,83 @@ public class RequestService {
             List<RequestDTO> requestDTOS = new ArrayList<>();
             for (Request request : requests) {
 
+                // Find All Images for the request
+                List<Image> images = imageService.getImagesByRequest(request);
+                if (images == null) {
+                    images = new ArrayList<>();
+                }
 
                 // Allow the CO (creator of the request) to always see the request, regardless of status
                 if (request.getUser().getUserId().equals(
                         userService.findUserByEmail(SecurityContextHolder.getContext().getAuthentication().getName()).getUserId()
                 )) {
-                    // Convert Request entity to RequestDTO
-                    // Convert Request entity to RequestDTO
-                    RequestDTO requestDTO = new RequestDTO();
-                    requestDTO.setId(request.getId());
-                    requestDTO.setFaultDescription(request.getFaultDescription());
-                    requestDTO.setStatus(request.getStatus().name());
-                    requestDTO.setType(request.getType().name());
-                    requestDTO.setImagePath(request.getImagePath());
-                    requestDTO.setCurrentLevel(request.getCurrentLevel());
-                    requestDTO.setSubmissionDate(request.getSubmissionDate());
-                    requestDTO.setUserId(request.getUser().getUserId());
-                    requestDTO.setSiteId(request.getSite().getSiteId());
-                    requestDTO.setForwardTo(request.getForwardedTo() != null ? request.getForwardedTo().getUserId() : null);
-                    requestDTO.setVerifiedBy(request.getVerifiedBy() != null ? request.getVerifiedBy().getUserId() : null);
-                    requestDTO.setApprovedBy(request.getApprovedBy() != null ? request.getApprovedBy().getUserId() : null);
-                    requestDTO.setForwardedBy(request.getForwardedBy() != null ? request.getForwardedBy().getUserId() : null);
-                    requestDTO.setNextAssignee(request.getNextAssignee() != null ? request.getNextAssignee().getUserId() : null);
-                    requestDTOS.add(requestDTO);
+                    requestDTOS.add(RequestDTO.toRequestDTO(request, images));
                     continue;
                 }
 
                 // Role-specific logic
-                if (role.equals("TGL")) {
-                    // TGL should not see requests forwarded to RM
-                    if (request.getStatus() == RequestStatus.PENDING && request.getForwardedTo() != null && request.getForwardedTo().getRole().equals("RM")) {
-                        continue;
+                switch (role) {
+                    case "TGL" -> {
+                        // TGL should not see requests forwarded to RM
+                        if (request.getStatus() == RequestStatus.PENDING && request.getForwardedTo() != null && request.getForwardedTo().getRole().equals("RM")) {
+                            continue;
+                        }
                     }
-                } else if (role.equals("RM")) {
-                    // RM should see requests forwarded to them but not yet approved
-                    if (( request.getStatus() == RequestStatus.VERIFIED) &&
-                         request.getForwardedTo() != null && request.getForwardedTo().getUserId().equals(userId)) {
-                        // Allow RM to view requests
-                    } else {
-                        continue;
+                    case "RM" -> {
+                        // RM should see requests forwarded to them but not yet approved
+                        if ((request.getStatus() != RequestStatus.VERIFIED) ||
+                                request.getForwardedTo() == null || !request.getForwardedTo().getUserId().equals(userId)) {
+                                    continue;
+                        }
                     }
-                } else if (role.equals("PM")) {
-                    // PM should only see requests forwarded by RM and not yet approved
-                    if (request.getStatus() == RequestStatus.VERIFIED &&
-                        request.getForwardedTo() != null && request.getForwardedTo().getRole().equals("PM")) {
-                        // Allow PM to view requests
-                    } else {
-                        continue;
+                    case "PM" -> {
+                        // PM should only see requests forwarded by RM and not yet approved
+                        if (request.getStatus() != RequestStatus.VERIFIED || request.getForwardedTo() == null || !request.getForwardedTo().getUserId().equals(userId) || !request.getCurrentLevel().equals("PM")) {
+                            continue;
+                        }
                     }
+                    default -> throw new IllegalStateException("Unexpected value: " + role);
                 }
 
-
-                // Convert Request entity to RequestDTO
-                RequestDTO requestDTO = new RequestDTO();
-                requestDTO.setId(request.getId());
-                requestDTO.setFaultDescription(request.getFaultDescription());
-                requestDTO.setStatus(request.getStatus().name());
-                requestDTO.setType(request.getType().name());
-                requestDTO.setImagePath(request.getImagePath());
-                requestDTO.setCurrentLevel(request.getCurrentLevel());
-                requestDTO.setSubmissionDate(request.getSubmissionDate());
-                requestDTO.setUserId(request.getUser().getUserId());
-                requestDTO.setSiteId(request.getSite().getSiteId());
-                requestDTO.setForwardTo(request.getForwardedTo() != null ? request.getForwardedTo().getUserId() : null);
-                requestDTO.setVerifiedBy(request.getVerifiedBy() != null ? request.getVerifiedBy().getUserId() : null);
-                requestDTO.setApprovedBy(request.getApprovedBy() != null ? request.getApprovedBy().getUserId() : null);
-                requestDTO.setForwardedBy(request.getForwardedBy() != null ? request.getForwardedBy().getUserId() : null);
-                requestDTO.setNextAssignee(request.getNextAssignee() != null ? request.getNextAssignee().getUserId() : null);
-                requestDTOS.add(requestDTO);
+                requestDTOS.add(RequestDTO.toRequestDTO(request, images));
             }
             return requestDTOS;
         }
-        return null;
+        return List.of();
     }
+
 
     /**
      * Find all requests of CO
-     * @param id
-     * @return
+     * @param id - the ID of the CO
+     * @return List of RequestDTOs
      */
     public List<RequestDTO> getAllRequestOfCO(Long id) {
         List<Request> requests = requestRepository.findRequestsByUserUserId(id);
         if (requests != null) {
-            List<RequestDTO> requestDTOS = new ArrayList<>();
+            List<RequestDTO> listOfRequestDtos = new ArrayList<>();
             for (Request request : requests) {
-                // Convert Request entity to RequestDTO
-                RequestDTO requestDTO = new RequestDTO();
-                requestDTO.setId(request.getId());
-                requestDTO.setFaultDescription(request.getFaultDescription());
-                requestDTO.setStatus(request.getStatus().name());
-                requestDTO.setType(request.getType().name());
-                requestDTO.setImagePath(request.getImagePath());
-                requestDTO.setCurrentLevel(request.getCurrentLevel());
-                requestDTO.setSubmissionDate(request.getSubmissionDate());
-                requestDTO.setUserId(request.getUser().getUserId());
-                requestDTO.setSiteId(request.getSite().getSiteId());
-                requestDTO.setForwardTo(request.getForwardedTo() != null ? request.getForwardedTo().getUserId() : null);
-                requestDTO.setVerifiedBy(request.getVerifiedBy() != null ? request.getVerifiedBy().getUserId() : null);
-                requestDTO.setApprovedBy(request.getApprovedBy() != null ? request.getApprovedBy().getUserId() : null);
-                requestDTO.setForwardedBy(request.getForwardedBy() != null ? request.getForwardedBy().getUserId() : null);
-                requestDTO.setNextAssignee(request.getNextAssignee() != null ? request.getNextAssignee().getUserId() : null);
-                requestDTOS.add(requestDTO);
+
+                // Find All Images for the request
+                List<Image> images = imageService.getImagesByRequest(request);
+                if (images == null) {
+                    images = new ArrayList<>();
+                }
+
+                // Add the request to the list
+                listOfRequestDtos.add(RequestDTO.toRequestDTO(request, images));
             }
-            return requestDTOS;
+            return listOfRequestDtos;
         }
-        return null;
+        return List.of();
     }
 
 
+    /**
+     * Delete a request by ID if it exists
+     * @param id - the ID of the request to delete
+     * @return true if the request was deleted, false otherwise
+     */
     public boolean deleteRequest(long id) {
         Optional<Request> requestInDb = requestRepository.findById(id);
         if (requestInDb.isPresent()) {
@@ -309,24 +224,64 @@ public class RequestService {
     }
 
     /**
-     * Get request by id
-     *
-     * @return
+     * Find a request by ID
+     * @param id - the ID of the request
+     * @return The request if it exists
      */
-    public Optional<Request> getRequest(long id){
-        return requestRepository.findById(id);
-    }
-
-    public List<Request> getAllRequests() {
-        return requestRepository.findAll();
-    }
-
     public Optional<Request> findRequestById(Long id) {
         return requestRepository.findById(id);
     }
 
     /**
-     * Get all requests of a user
+     * Convert a RequestDTO to a Request entity
+     * @param requestDTO - The RequestDTO to convert
+     * @param user - The User who created the request
+     * @param site - The Site associated with the request
+     * @param forwardTo - The User to whom the request is forwarded
+     * @return - The converted Request entity
      */
+     private static Request toRequest(RequestDTO requestDTO, User user, Site site, User forwardTo) {
+        Request request = new Request();
+        request.setFaultDescription(requestDTO.getFaultDescription());
+        request.setStatus(RequestStatus.valueOf(requestDTO.getStatus()));
+        request.setType(RequestType.valueOf(requestDTO.getType()));
+        request.setCurrentLevel(requestDTO.getCurrentLevel());
+        request.setSubmissionDate(requestDTO.getSubmissionDate());
+        request.setUser(user);
+        request.setSite(site);
+        request.setForwardedTo(forwardTo);
+         setRoles(request, requestDTO);
+         return request;
+    }
 
+    /**
+     * Set the roles for the request entity
+     * @param request - The request entity
+     * @param requestDTO - The request DTO
+     */
+    private static void setRoles (Request request, RequestDTO requestDTO) {
+        if (requestDTO.getVerifiedBy() != null) {
+            User verifiedBy = new User();
+            verifiedBy.setUserId(requestDTO.getVerifiedBy());
+            request.setVerifiedBy(verifiedBy);
+        }
+
+        if (requestDTO.getApprovedBy() != null) {
+            User approvedBy = new User();
+            approvedBy.setUserId(requestDTO.getApprovedBy());
+            request.setApprovedBy(approvedBy);
+        }
+
+        if (requestDTO.getForwardedBy() != null) {
+            User forwardedBy = new User();
+            forwardedBy.setUserId(requestDTO.getForwardedBy());
+            request.setForwardedBy(forwardedBy);
+        }
+
+        if (requestDTO.getNextAssignee() != null) {
+            User nextAssignee = new User();
+            nextAssignee.setUserId(requestDTO.getNextAssignee());
+            request.setNextAssignee(nextAssignee);
+        }
+    }
 }
