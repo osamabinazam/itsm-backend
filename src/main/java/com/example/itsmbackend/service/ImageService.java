@@ -3,6 +3,7 @@ package com.example.itsmbackend.service;
 import com.example.itsmbackend.entity.Image;
 import com.example.itsmbackend.entity.Request;
 import com.example.itsmbackend.repository.ImageRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,9 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The ImageService class is responsible for handling image-related operations.
+ * The ImageService class handles image-related operations.
  * It provides methods for storing and retrieving images.
- * The class is annotated with @Service to indicate that it is a service class.
  */
 @Service
 public class ImageService {
@@ -24,24 +24,39 @@ public class ImageService {
     private final ImageRepository imageRepository;
     private final Path rootLocation;
 
+    // Base URL for accessing uploaded files from the client
+    @Value("${server.host.url}")
+    private String serverHostUrl;
+
+    @Value("${file.storage-location}")
+    private String uploadRelativePath;
+
     /**
-     * Constructs a new ImageService with the given ImageRepository.
+     * Constructs an ImageService with the provided ImageRepository and initializes the storage path.
      *
-     * @param imageRepository The ImageRepository to use for image operations.
-     * @throws IOException If an error occurs while creating the storage directory.
+     * @param imageRepository The repository for managing image data.
+     * @throws IOException If the upload directory cannot be created.
      */
     public ImageService(ImageRepository imageRepository) throws IOException {
         this.imageRepository = imageRepository;
-        this.rootLocation = Paths.get("uploads").toAbsolutePath().normalize();
+
+        // Provide a fallback in case uploadRelativePath is null or empty
+        if (uploadRelativePath == null || uploadRelativePath.isEmpty()) {
+            uploadRelativePath = "uploads/";
+        }
+
+        this.rootLocation = Paths.get(System.getProperty("user.dir"), uploadRelativePath).toAbsolutePath().normalize();
+
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
-            throw new IOException("Could not create the storage directory at the root.", e);
+            throw new IOException("Could not create the storage directory at the root: " + rootLocation, e);
         }
     }
 
     /**
      * Stores a list of images in the file system and associates them with a request.
+     * Returns a list of Image entities with public URLs for accessing the images.
      *
      * @param images       The list of images to store.
      * @param savedRequest The request to associate the images with.
@@ -51,21 +66,25 @@ public class ImageService {
     public List<Image> storeImages(List<MultipartFile> images, Request savedRequest) throws IOException {
         List<Image> imageEntities = new ArrayList<>();
         for (MultipartFile imageFile : images) {
-            String filePath = saveImageToFileSystem(imageFile);
+            // Store the image and get the public URL
+            String publicUrl = saveImageToFileSystem(imageFile);
+
+            // Create Image entity
             Image image = new Image();
-            image.setImagePath(filePath);
+            image.setImagePath(publicUrl);  // Store public URL in Image entity
             image.setRequest(savedRequest);
             imageEntities.add(image);
         }
+
         imageRepository.saveAll(imageEntities);
         return imageEntities;
     }
 
     /**
-     * Saves an image to the file system.
+     * Saves an image to the file system and returns the public URL to access the image.
      *
      * @param file The image file to save.
-     * @return The path to the saved image.
+     * @return The public URL to access the saved image.
      * @throws IOException If an error occurs while saving the image.
      */
     private String saveImageToFileSystem(MultipartFile file) throws IOException {
@@ -73,7 +92,9 @@ public class ImageService {
             String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path targetLocation = rootLocation.resolve(fileName);
             file.transferTo(targetLocation.toFile());
-            return targetLocation.toString();
+
+            // Return the public URL of the file
+            return serverHostUrl + "/uploads/" + fileName;  // Public URL that clients can use
         } catch (IOException e) {
             throw new IOException("Could not store file " + file.getOriginalFilename() + ". Please try again!", e);
         }
