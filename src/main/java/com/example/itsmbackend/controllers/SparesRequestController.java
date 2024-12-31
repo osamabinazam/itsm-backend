@@ -5,6 +5,7 @@ import com.example.itsmbackend.payloads.SparesRequestDTO;
 import com.example.itsmbackend.service.SparesRequestService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,7 @@ public class SparesRequestController {
         this.sparesRequestService =sparesRequestService;
     }
 
+    @PreAuthorize("hasAnyRole('MC', 'CO', 'TGL' ,'RM' )")
     @GetMapping
     public ResponseEntity<?> getSpareRequestOfCurrentUser(Authentication authentication){
         String username = authentication.getName();
@@ -29,6 +31,8 @@ public class SparesRequestController {
 
     }
 
+
+    @PreAuthorize("hasRole('CO')")
     @PostMapping("/{requestId}")
     public ResponseEntity<?> create(@PathVariable Long requestId, @RequestBody List<SpareDTO> requestedSpares, Authentication authentication){
         try{
@@ -41,6 +45,7 @@ public class SparesRequestController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('MC', 'CO', 'TGL' ,'RM' )")
     @GetMapping("/{requestId}")
     public ResponseEntity<?> getSpareRequestByRequestId(@PathVariable Long requestId){
         try{
@@ -53,6 +58,7 @@ public class SparesRequestController {
 
     }
 
+    @PreAuthorize("hasAnyRole('MC', 'CO', 'TGL' ,'RM' )")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateSparesRequest(
             @PathVariable Long id,

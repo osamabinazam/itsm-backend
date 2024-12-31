@@ -98,6 +98,7 @@ public class SparesRequestService {
     /**
      * Retrieve spare requests assined to current user
      */
+
     public  List<SparesRequestDTO> getSparesRequestForUser(String username){
         User currentUser = userRepository.findByEmail(username);
         if (currentUser == null){
